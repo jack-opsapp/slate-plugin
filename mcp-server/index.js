@@ -49,7 +49,7 @@ async function slateApi(method, path, body, queryParams) {
 
   const headers = { 'Content-Type': 'application/json' };
   if (config.apiKey) {
-    headers['Authorization'] = `Bearer ${config.apiKey}`;
+    headers['X-API-Key'] = config.apiKey;
   }
 
   const opts = { method, headers };
