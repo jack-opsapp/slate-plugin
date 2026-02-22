@@ -21,7 +21,8 @@ function loadConfig() {
     try {
       const raw = readFileSync(CONFIG_PATH, 'utf-8');
       const parsed = JSON.parse(raw);
-      if (parsed.apiKey) return { apiKey: parsed.apiKey };
+      const key = parsed.api_key || parsed.apiKey;
+      if (key) return { apiKey: key };
     } catch {
       // ignore parse errors
     }
@@ -406,13 +407,13 @@ server.tool(
       if (page_id) {
         // When scoped to one page, still fetch the list and filter
         const allPages = await slateApi('GET', '/pages');
-        pages = (allPages.data || allPages).filter((p) => p.id === page_id);
+        pages = (allPages.pages || []).filter((p) => p.id === page_id);
         if (pages.length === 0) {
           return err(`Page not found: ${page_id}`);
         }
       } else {
         const allPages = await slateApi('GET', '/pages');
-        pages = allPages.data || allPages;
+        pages = allPages.pages || [];
       }
 
       // 2. For each page, fetch sections and incomplete notes
@@ -421,13 +422,13 @@ server.tool(
         const sectionsRes = await slateApi('GET', '/sections', null, {
           page_id: page.id,
         });
-        const sections = sectionsRes.data || sectionsRes;
+        const sections = sectionsRes.sections || [];
 
         const notesRes = await slateApi('GET', '/notes', null, {
           page_id: page.id,
-          completed: false,
+          completed: 'false',
         });
-        const notes = notesRes.data || notesRes;
+        const notes = notesRes.notes || [];
 
         // Group notes by section
         const notesBySection = {};
@@ -483,9 +484,8 @@ server.tool(
       if (date_to) qp.date_to = date_to;
 
       const data = await slateApi('GET', '/notes', null, qp);
-      const notes = data.data || data;
+      const notes = data.notes || [];
 
-      // Enrich with a result count for convenience
       return ok({ count: notes.length, results: notes });
     } catch (e) {
       return err(e.message);
@@ -536,8 +536,7 @@ server.tool(
           name: section_name || 'Checklist',
           page_id,
         });
-        const section = sectionData.data || sectionData;
-        targetSectionId = section.id;
+        targetSectionId = sectionData.section.id;
       }
 
       // Create each note
@@ -549,7 +548,7 @@ server.tool(
         };
         if (item.tags) body.tags = item.tags;
         const noteData = await slateApi('POST', '/notes', body);
-        created.push(noteData.data || noteData);
+        created.push(noteData.note);
       }
 
       return ok({
