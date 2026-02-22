@@ -1,9 +1,8 @@
 {
-  "description": "Slate integration hooks for automatic syncing and progress tracking",
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume",
+        "matcher": "*",
         "hooks": [
           {
             "type": "prompt",
