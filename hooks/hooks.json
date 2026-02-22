@@ -1,0 +1,27 @@
+{
+  "description": "Slate integration hooks for automatic syncing and progress tracking",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if a .claude/slate.local.md file exists in the current project directory. If it does, read the page_id from its YAML frontmatter and call the slate_sync MCP tool with that page_id to load open items. Present a brief summary of open items to the user (e.g. '3 open bugs, 2 items need testing'). If the file does not exist, ask the user: 'Would you like to connect a Slate page to this project for task tracking? I can list your pages with slate_list_pages.' If the user chooses a page, create .claude/slate.local.md with the page_id and page_name in YAML frontmatter."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before finishing, check if .claude/slate.local.md exists. If it does and you completed meaningful work this session (implemented a feature, fixed a bug, or made progress on a task), use the Slate MCP tools to update your progress: (1) If any Slate notes correspond to completed work, call slate_update_note to mark them completed=true. (2) If you implemented something that needs user testing, call slate_create_checklist or slate_create_note with tags ['NEEDS-TESTING'] describing what to test and expected behavior. (3) If work is partially done, call slate_update_note to add the tag 'IN-PROGRESS'. (4) If you encountered blockers, call slate_create_note with tags ['BLOCKED'] describing the issue. Be concise — only update Slate if real progress was made. Do not create noise."
+          }
+        ]
+      }
+    ]
+  }
+}

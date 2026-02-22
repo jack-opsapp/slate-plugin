@@ -1,0 +1,10 @@
+{
+  "name": "slate",
+  "version": "1.0.0",
+  "description": "Bidirectional Slate integration — automatic todo sync, progress tracking, and testing checkpoints",
+  "author": {
+    "name": "Jackson Sweet"
+  },
+  "license": "MIT",
+  "keywords": ["slate", "notes", "todos", "tracking", "testing"]
+}
