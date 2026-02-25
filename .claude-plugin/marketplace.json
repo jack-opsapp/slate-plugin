@@ -12,8 +12,14 @@
       "author": {
         "name": "Jackson Sweet"
       },
-      "source": ".",
-      "category": "productivity"
+      "source": "./plugins/slate",
+      "category": "productivity",
+      "mcpServers": {
+        "slate": {
+          "command": "node",
+          "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"]
+        }
+      }
     }
   ]
 }
