@@ -1,0 +1,19 @@
+{
+  "name": "slate-plugin",
+  "description": "Bidirectional Slate integration — automatic todo sync, progress tracking, and testing checkpoints",
+  "owner": {
+    "name": "Jackson Sweet"
+  },
+  "plugins": [
+    {
+      "name": "slate",
+      "description": "Bidirectional Slate integration — automatic todo sync, progress tracking, and testing checkpoints",
+      "version": "1.0.0",
+      "author": {
+        "name": "Jackson Sweet"
+      },
+      "source": ".",
+      "category": "productivity"
+    }
+  ]
+}
