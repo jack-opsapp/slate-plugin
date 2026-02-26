@@ -34,6 +34,12 @@ const config = loadConfig();
 const BASE_URL =
   process.env.SLATE_BASE_URL || 'https://slate.opsapp.co/api/v1';
 
+if (!config.apiKey) {
+  console.error(
+    '[slate] No API key found. Set SLATE_API_KEY env var or create ~/.slate/config.json with {"api_key": "your-key"}'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------

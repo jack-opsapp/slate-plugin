@@ -2,7 +2,7 @@
   "mcpServers": {
     "slate": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/plugins/slate/mcp-server/dist/index.mjs"]
     }
   }
 }

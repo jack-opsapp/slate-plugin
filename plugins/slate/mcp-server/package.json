@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.mjs --external:node:*"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3"
   }
 }
