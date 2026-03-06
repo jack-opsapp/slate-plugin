@@ -83,10 +83,10 @@ async function slateApi(method, path, body, queryParams) {
   return data;
 }
 
-/** Standard MCP success response */
+/** Standard MCP success response — compact JSON to minimize tokens */
 function ok(data) {
   return {
-    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+    content: [{ type: 'text', text: JSON.stringify(data) }],
   };
 }
 
@@ -158,7 +158,7 @@ server.tool(
 
 server.tool(
   'slate_list_notes',
-  'List notes with optional filters.',
+  'List notes with optional filters. Returns compact format (id, content preview, tags, completed) by default.',
   {
     page_id: z.string().optional().describe('Filter by page ID.'),
     section_id: z.string().optional().describe('Filter by section ID.'),
@@ -178,17 +178,31 @@ server.tool(
       .enum(['include', 'only'])
       .optional()
       .describe('Include or exclusively show deleted notes.'),
+    full: z.boolean().optional().describe('Return full note objects. Default false (compact).'),
   },
   async (params) => {
     try {
+      const { full, ...rest } = params;
       const qp = {};
-      for (const [key, value] of Object.entries(params)) {
+      for (const [key, value] of Object.entries(rest)) {
         if (value !== undefined && value !== null) {
           qp[key] = value;
         }
       }
       const data = await slateApi('GET', '/notes', null, qp);
-      return ok(data);
+      if (full) {
+        const notes = (data.notes || []).map((n, i) => ({ '#': i + 1, ...n }));
+        return ok({ count: notes.length, notes });
+      }
+      const notes = (data.notes || []).map((n, i) => ({
+        '#': i + 1,
+        id: n.id,
+        content: n.content && n.content.length > 120 ? n.content.slice(0, 120) + '...' : n.content,
+        tags: n.tags,
+        completed: n.completed,
+        section_id: n.section_id,
+      }));
+      return ok({ count: notes.length, notes });
     } catch (e) {
       return err(e.message);
     }
@@ -393,25 +407,92 @@ server.tool(
   }
 );
 
-// ===========================
-// Task 9 — 3 high-level tools
-// ===========================
+// ---- Connection tools (3) --------------------------------------------------
+
+server.tool(
+  'slate_get_connections',
+  'Get connections for a specific note, or all connections if no note_id provided.',
+  {
+    note_id: z
+      .string()
+      .optional()
+      .describe('The note ID to get connections for. If omitted, returns all connections.'),
+  },
+  async ({ note_id }) => {
+    try {
+      const qp = {};
+      if (note_id) qp.note_id = note_id;
+      const data = await slateApi('GET', '/connections', null, qp);
+      return ok(data);
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+);
+
+server.tool(
+  'slate_create_connection',
+  'Create a connection between two notes. Use to link related items across sections or pages.',
+  {
+    source_note_id: z.string().describe('The source note ID.'),
+    target_note_id: z.string().describe('The target note ID.'),
+    connection_type: z
+      .enum(['related', 'supports', 'contradicts', 'extends', 'source'])
+      .optional()
+      .describe('Type of connection. Defaults to "related".'),
+    label: z
+      .string()
+      .optional()
+      .describe('Optional label for the connection.'),
+  },
+  async ({ source_note_id, target_note_id, connection_type, label }) => {
+    try {
+      const body = { source_note_id, target_note_id };
+      if (connection_type) body.connection_type = connection_type;
+      if (label) body.label = label;
+      const data = await slateApi('POST', '/connections', body);
+      return ok(data);
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+);
+
+server.tool(
+  'slate_delete_connection',
+  'Delete a connection between notes.',
+  {
+    id: z.string().describe('The connection ID to delete.'),
+  },
+  async ({ id }) => {
+    try {
+      const data = await slateApi('DELETE', `/connections/${id}`);
+      return ok(data);
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+);
+
+// ---- High-level tools (3) -------------------------------------------------
 
 server.tool(
   'slate_sync',
-  'Fetch a structured summary of all pages, sections, and incomplete notes. Optionally scope to a single page.',
+  'Fetch ALL incomplete notes for a page, grouped by section, with enumeration (#1, #2...). Slim mode (default) truncates content to 80 chars. Use full=true for complete content.',
   {
     page_id: z
       .string()
       .optional()
       .describe('If provided, only sync this page.'),
+    full: z
+      .boolean()
+      .optional()
+      .describe('Return full note content. Default false (slim: counts + tagged items only).'),
   },
-  async ({ page_id }) => {
+  async ({ page_id, full }) => {
     try {
-      // 1. Fetch pages
       let pages;
       if (page_id) {
-        // When scoped to one page, still fetch the list and filter
         const allPages = await slateApi('GET', '/pages');
         pages = (allPages.pages || []).filter((p) => p.id === page_id);
         if (pages.length === 0) {
@@ -422,7 +503,6 @@ server.tool(
         pages = allPages.pages || [];
       }
 
-      // 2. For each page, fetch sections and incomplete notes
       const summary = [];
       for (const page of pages) {
         const sectionsRes = await slateApi('GET', '/sections', null, {
@@ -436,7 +516,6 @@ server.tool(
         });
         const notes = notesRes.notes || [];
 
-        // Group notes by section
         const notesBySection = {};
         for (const note of notes) {
           const sid = note.section_id || '_unsectioned';
@@ -444,24 +523,49 @@ server.tool(
           notesBySection[sid].push(note);
         }
 
-        const sectionSummaries = sections.map((sec) => ({
-          id: sec.id,
-          name: sec.name,
-          incomplete_notes: (notesBySection[sec.id] || []).map((n) => ({
-            id: n.id,
-            content: n.content,
-            tags: n.tags,
-            date: n.date,
-          })),
-        }));
-
-        summary.push({
-          id: page.id,
-          name: page.name,
-          starred: page.starred,
-          sections: sectionSummaries,
-          total_incomplete: notes.length,
-        });
+        let noteNum = 1;
+        if (full) {
+          const sectionSummaries = sections.map((sec) => ({
+            id: sec.id,
+            name: sec.name,
+            notes: (notesBySection[sec.id] || []).map((n) => ({
+              '#': noteNum++,
+              id: n.id,
+              content: n.content,
+              tags: n.tags,
+              date: n.date,
+            })),
+          }));
+          summary.push({
+            id: page.id,
+            name: page.name,
+            starred: page.starred,
+            sections: sectionSummaries,
+            total_incomplete: notes.length,
+          });
+        } else {
+          // Slim mode: ALL notes compactly with truncated content
+          const sectionSummaries = sections.map((sec) => {
+            const secNotes = notesBySection[sec.id] || [];
+            return {
+              id: sec.id,
+              name: sec.name,
+              count: secNotes.length,
+              notes: secNotes.map((n) => ({
+                '#': noteNum++,
+                id: n.id,
+                content: n.content && n.content.length > 80 ? n.content.slice(0, 80) + '...' : n.content,
+                tags: n.tags || [],
+              })),
+            };
+          });
+          summary.push({
+            id: page.id,
+            name: page.name,
+            sections: sectionSummaries,
+            total_incomplete: notes.length,
+          });
+        }
       }
 
       return ok(summary);
@@ -490,8 +594,13 @@ server.tool(
       if (date_to) qp.date_to = date_to;
 
       const data = await slateApi('GET', '/notes', null, qp);
-      const notes = data.notes || [];
-
+      const notes = (data.notes || []).map((n, i) => ({
+        '#': i + 1,
+        id: n.id,
+        content: n.content && n.content.length > 120 ? n.content.slice(0, 120) + '...' : n.content,
+        tags: n.tags,
+        completed: n.completed,
+      }));
       return ok({ count: notes.length, results: notes });
     } catch (e) {
       return err(e.message);

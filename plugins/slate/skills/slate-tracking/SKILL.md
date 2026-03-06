@@ -5,9 +5,13 @@ description: "Conventions for using Slate as a task tracker with Claude Code. Us
 
 # Slate Task Tracking Conventions
 
-## Tag Vocabulary
+## Critical Rules
 
-Use these standard tags when creating or updating notes in Slate:
+1. **Create/update Slate notes BEFORE responding to the user.** Never tell the user what you did and then update Slate — update Slate first, then summarize.
+2. **Always scope to the page_id from .claude/slate.local.md.** Never fetch all pages unless the user explicitly asks.
+3. **Default to incomplete notes only.** Only fetch completed notes if the user asks for them.
+
+## Tag Vocabulary
 
 | Tag | Meaning |
 |-----|---------|
@@ -19,6 +23,10 @@ Use these standard tags when creating or updating notes in Slate:
 | URGENT | Time-sensitive, prioritize |
 | TODAY | Should be done today |
 | THIS-WEEK | Should be done this week |
+
+## Note Enumeration
+
+All list and sync responses include a `#` field (1, 2, 3...) for easy reference. When presenting notes to the user, always show the number prefix so items can be referenced by number (e.g. "mark #3 done", "what's the status of #7").
 
 ## When to Create Sections vs Tagged Notes
 
@@ -33,12 +41,33 @@ When creating testing checkpoints after implementing a feature:
 - **Tags:** Always include NEEDS-TESTING
 - **Example:** "Login with Google redirects to dashboard within 2 seconds" tagged NEEDS-TESTING
 
+## Connecting Notes
+
+Use connections to link related notes across sections or pages:
+
+- **`slate_create_connection`** — Link two notes with a typed relationship
+- **Connection types:** `related` (default), `supports`, `contradicts`, `extends`, `source`
+- **When to connect:**
+  - A bug note relates to a feature plan note → `related`
+  - A testing checkpoint validates a plan step → `supports`
+  - New research contradicts an existing assumption → `contradicts`
+  - A follow-up task builds on a completed item → `extends`
+  - A note references an external source or another note as origin → `source`
+
+### Shared Notes Pattern
+
+To share context across sections or pages, create a note in one location and connect it to relevant notes elsewhere. This avoids duplicating content:
+
+1. Create the canonical note in the most relevant section
+2. Use `slate_create_connection` with type `related` or `extends` to link it to notes in other sections/pages
+3. When listing connections for a note (`slate_get_connections`), you can see all linked items
+
 ## Session Workflow
 
-1. **Session start:** Check Slate sync results for open items. Prioritize by tags: URGENT > TODAY > BUG > THIS-WEEK > others
-2. **During work:** When starting on a Slate item, tag it IN-PROGRESS
-3. **After completing work:** Mark the note completed=true. Create testing checkpoints if the work needs user verification.
-4. **When blocked:** Tag the item BLOCKED and update content with the reason
+1. **Session start:** Confirm the page from .claude/slate.local.md with the user. Sync incomplete notes. Present numbered summary. Prioritize: URGENT > TODAY > BUG > THIS-WEEK > others.
+2. **During work:** Tag active items IN-PROGRESS. Connect related items as you discover relationships.
+3. **After completing work:** FIRST update Slate (mark done, create testing notes, connect related items), THEN respond to the user.
+4. **When blocked:** Tag the item BLOCKED and update content with the reason.
 
 ## Project Config
 
