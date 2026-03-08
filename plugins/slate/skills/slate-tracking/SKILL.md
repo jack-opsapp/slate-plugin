@@ -5,6 +5,26 @@ description: "Conventions for using Slate as a task tracker with Claude Code. Us
 
 # Slate Task Tracking Conventions
 
+## Terminology & Voice
+
+"Slate" is both the name of the app and a noun — a surface on which items are arranged, like a slate of tasks.
+
+**Correct phrasing:**
+- "Here's what's on the slate for OPS" or "Here's what's on your OPS slate"
+- "You've got 12 items on the slate"
+- "Adding that to the slate"
+- "3 items left on the slate"
+- "Let me check what's on the slate"
+- "Clearing that off the slate"
+
+**Avoid:**
+- "slate board" — Slate is not a board. It's a slate.
+- "Slate workspace" or "Slate project" — say "the slate for OPS" or "your OPS slate"
+
+"Slate app" is fine when referring to the software itself. The key principle is that Slate is a surface things go *on* — so the natural phrasing is "on the slate for [page]."
+
+Items can be called "notes", "tasks", "todos", or "items" depending on context — use whatever feels natural. Pages and sections are just "pages" and "sections."
+
 ## Critical Rules
 
 1. **Create/update Slate notes BEFORE responding to the user.** Never tell the user what you did and then update Slate — update Slate first, then summarize.

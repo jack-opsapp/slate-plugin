@@ -5,7 +5,9 @@ description: "Batch-execute Slate notes via parallel agents. Trigger when user s
 
 # Execute Notes
 
-Batch-execute incomplete Slate notes by dispatching parallel agents grouped by work area.
+Batch-execute incomplete notes on the slate by dispatching parallel agents grouped by work area.
+
+> **Terminology:** Follow the voice guidelines in the `slate-tracking` skill. Say "notes on the slate" not "Slate notes." Never say "slate board."
 
 ## Trigger
 

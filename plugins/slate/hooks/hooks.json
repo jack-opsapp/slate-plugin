@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Use the Agent tool to check Slate status. Steps: (1) Read .claude/slate.local.md. If it does NOT exist, ask the user: 'No Slate page connected. Want me to list your pages with slate_list_pages?' and stop. (2) If it exists, read the page_id and page_name. (3) Ask the user to confirm: 'Slate connected to [page_name]. Working from this page? (Or specify a section to scope to.)' (4) Once confirmed, call slate_sync with the page_id (slim mode, no full=true) to fetch all incomplete notes. (5) Report a numbered summary to the user. IMPORTANT: Always scope to the page_id from slate.local.md. Never fetch all pages."
+            "prompt": "Use the Agent tool to check Slate status. Steps: (1) Read .claude/slate.local.md. If it does NOT exist, ask the user: 'No Slate page connected. Want me to list your pages with slate_list_pages?' and stop. (2) If it exists, read the page_id and page_name. (3) Ask the user to confirm: 'Slate connected to [page_name]. Working from this page? (Or specify a section to scope to.)' (4) Once confirmed, call slate_sync with the page_id (slim mode, no full=true) to fetch all incomplete notes. (5) Report a numbered summary to the user using correct Slate terminology — e.g. 'Here's what's on the slate for [page_name]' or 'You've got [N] notes on the [page_name] slate.' Never say 'slate board', 'Slate project', or 'Slate workspace.' IMPORTANT: Always scope to the page_id from slate.local.md. Never fetch all pages."
           }
         ]
       }
