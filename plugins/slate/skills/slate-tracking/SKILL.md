@@ -31,7 +31,11 @@ Items can be called "notes", "tasks", "todos", or "items" depending on context �
 2. **Always scope to the page_id from .claude/slate.local.md.** Never fetch all pages unless the user explicitly asks.
 3. **Default to incomplete notes only.** Only fetch completed notes if the user asks for them.
 
-## Tag Vocabulary
+## Tag Rules
+
+**Before creating any tag, call `slate_list_tags` to check what already exists.** Reuse existing tags rather than creating near-duplicates. If an existing tag covers the same concept (e.g., `HIGH` already exists), use it — don't create `HIGH-PRIORITY`.
+
+### Built-in Tags
 
 | Tag | Meaning |
 |-----|---------|
@@ -43,6 +47,24 @@ Items can be called "notes", "tasks", "todos", or "items" depending on context �
 | URGENT | Time-sensitive, prioritize |
 | TODAY | Should be done today |
 | THIS-WEEK | Should be done this week |
+
+### Naming Conventions for Custom Tags
+
+When the user asks to categorize or organize notes and no relevant tags exist yet, follow these patterns:
+
+| Category | Convention | Examples |
+|----------|-----------|----------|
+| Priority | P1, P2, P3 | P1 = critical, P2 = important, P3 = nice-to-have |
+| Difficulty / Level | L1, L2, L3 | L1 = easy, L2 = moderate, L3 = complex |
+| Size / Effort | S, M, L, XL | T-shirt sizing |
+| Phase | PHASE-1, PHASE-2 | Sequential project phases |
+| Category prefix | CAT-[NAME] | CAT-UI, CAT-API, CAT-DATA |
+
+**General rules:**
+- **UPPERCASE, hyphen-separated** — all tags follow this format (e.g., `NEEDS-TESTING`, not `needs_testing`)
+- **Short and scannable** — prefer abbreviations over full words when unambiguous (P1 over PRIORITY-HIGH)
+- **No redundancy** — don't create both `URGENT` and `P1`. Pick one system per concept.
+- **Check first, create second** — always `slate_list_tags` before introducing new tags. If the user's intent maps to an existing tag, use it.
 
 ## Note Enumeration
 
